@@ -1,14 +1,14 @@
 'use client';
 
 import { Input } from '@/components/ui/input';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import Markdown from 'react-markdown';
-import { BookA, FolderOpen, LaptopMinimalCheck } from 'lucide-react';
+import { BookA, FolderOpen, LaptopMinimalCheck, Loader } from 'lucide-react';
 
 const planSchema = z.object({
   name: z.string().min(3).max(100),
@@ -33,6 +33,15 @@ export function Formulario() {
   } = useForm<SchemaPlan>({
     resolver: zodResolver(planSchema),
   });
+
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  //Para ir descendo o container juntamente com a resposta
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollTop = containerRef.current.scrollHeight;
+    }
+  }, [output]);
 
   async function sub(data: SchemaPlan) {
     console.log(data);
@@ -82,10 +91,22 @@ export function Formulario() {
           Resultado
         </h1>
       </div>
-      <article className="prose prose-zinc prose-2xl max-w-[800px] h-[600px] bg-[#fff] overflow-y-auto mt-12 text-2xl px-12 mb-12">
+      <article
+        ref={containerRef}
+        className="prose prose-zinc prose-2xl max-w-[800px] h-[600px] bg-[#fff] overflow-y-auto mt-12 text-2xl px-12 mb-12"
+      >
+        {loading ? (
+          <div className="flex items-center gap-4">
+            <Loader size="2.5rem" className="animate-spin text-amber-400" />
+            Gerando recomendação...
+          </div>
+        ) : (
+          <></>
+        )}
         <Markdown>{output}</Markdown>
       </article>
       <Button
+        disabled={loading}
         onClick={() => setOutput(null)}
         variant="link"
         className="bg-amber-400 px-12 py-6 text-2xl rounded-2xl"
@@ -116,6 +137,9 @@ export function Formulario() {
           placeholder="Digite seu nome:"
           {...register('name')}
         />
+        {errors.name && (
+          <span className="text-red-500 text-sm">{errors.name.message}</span>
+        )}
         <Input
           className="shadow-neutral-400 shadow-sm"
           required
@@ -123,9 +147,13 @@ export function Formulario() {
           placeholder="Digite o valor que irá investir:"
           {...register('budget', { valueAsNumber: true })}
         />
+        {errors.budget && (
+          <span className="text-red-500 text-sm">{errors.budget.message}</span>
+        )}
 
         <select
           required
+          defaultValue=""
           className="outline-1 rounded-lg shadow-neutral-400 shadow-sm"
           {...register('purpose')}
         >
@@ -138,6 +166,7 @@ export function Formulario() {
 
         <select
           required
+          defaultValue=""
           className="outline-1 rounded-lg shadow-neutral-400 shadow-sm"
           {...register('type')}
         >
@@ -155,6 +184,9 @@ export function Formulario() {
             {store}
           </label>
         ))}
+        {errors.stores && (
+          <span className="text-red-500 text-sm">{errors.stores.message}</span>
+        )}
 
         <Button
           disabled={loading}
@@ -164,9 +196,6 @@ export function Formulario() {
         >
           {loading ? 'Carregando' : 'Enviar'}
         </Button>
-        {errors.budget && (
-          <span className="text-red-500 text-sm">{errors.budget.message}</span>
-        )}
       </form>
     </div>
   );
